@@ -54,6 +54,15 @@ to complete:
 4. Phase 4. **Modify**
 5. Phase 5. **Apply**
 
+## Phase 4
+
+- In kafka_consumer_shelhamer.py
+- I updated these two log messages:
+        LOG.info("MESSAGE CONSUMED")
+        LOG.info(f"consumed={consumed_count}")
+to one log message that still contains all the same information, but more simplified.
+        LOG.info(f"MESSAGE CONSUMED; consumed={consumed_count}")
+
 ## Challenges
 
 Challenges are expected.
