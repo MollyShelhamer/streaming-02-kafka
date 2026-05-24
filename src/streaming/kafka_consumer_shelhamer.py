@@ -69,6 +69,7 @@ DATA_DIR: Final[Path] = ROOT_DIR / "data"
 OUTPUT_DIR: Final[Path] = DATA_DIR / "output"
 
 OUTPUT_CSV: Final[Path] = OUTPUT_DIR / "consumed_sales.csv"
+OUTPUT_CSV_SELECTED: Final[Path] = OUTPUT_DIR / "consumed_sales_selected.csv"
 
 
 # ==========================================================
@@ -85,6 +86,7 @@ def log_paths() -> None:
     log_path(LOG, "ROOT_DIR", ROOT_DIR)
     log_path(LOG, "DATA_DIR", DATA_DIR)
     log_path(LOG, "OUTPUT_CSV", OUTPUT_CSV)
+    log_path(LOG, "OUTPUT_CSV_SELECTED", OUTPUT_CSV_SELECTED)
 
 
 def load_settings() -> KafkaSettings:
@@ -186,7 +188,24 @@ def initialize_output() -> RunningStats:
         OUTPUT_CSV.unlink()
     LOG.info(f"Output CSV cleared: {OUTPUT_CSV.name}")
 
+    if OUTPUT_CSV_SELECTED.exists():
+        OUTPUT_CSV_SELECTED.unlink()
+    LOG.info(f"Output CSV cleared: {OUTPUT_CSV_SELECTED.name}")
+
     return RunningStats()
+
+
+def select_fields(row: dict[str, Any]) -> dict[str, Any]:
+    """Select specific fields from the consumed message.
+
+    Arguments:
+        row: A consumed Kafka message row.
+
+    Returns:
+        A dictionary with only the selected fields.
+    """
+    fields_to_keep = ["sale_id", "product_id", "sale_amount", "region_id"]
+    return {k: row[k] for k in fields_to_keep if k in row}
 
 
 def process_message(row: dict[str, Any]) -> dict[str, Any]:
@@ -244,6 +263,13 @@ def consume_messages(consumer: Any) -> int:
             fieldnames=list(processed.keys()),
         )
 
+        selected = select_fields(row)
+        append_csv_row(
+            path=OUTPUT_CSV_SELECTED,
+            row=selected,
+            fieldnames=list(selected.keys()),
+        )
+
         consumed_count += 1
         LOG.info(f"MESSAGE CONSUMED; consumed={consumed_count}")
 
@@ -254,6 +280,7 @@ def save_artifacts(stats: RunningStats) -> None:
     """Save output artifacts."""
     LOG.info("Saving artifacts...")
     log_path(LOG, "WROTE OUTPUT_CSV", OUTPUT_CSV)
+    log_path(LOG, "WROTE OUTPUT_CSV_SELECTED", OUTPUT_CSV_SELECTED)
 
 
 # ===========================================================================
@@ -266,6 +293,7 @@ def log_summary(consumed_count: int, settings: KafkaSettings) -> None:
     LOG.info("Summary:")
     LOG.info(f"Consumed {consumed_count} message(s) from topic {settings.topic!r}.")
     log_path(LOG, "OUTPUT_CSV", OUTPUT_CSV)
+    log_path(LOG, "OUTPUT_CSV_SELECTED", OUTPUT_CSV_SELECTED)
     LOG.info("========================")
     LOG.info("Consumer executed successfully!")
     LOG.info("========================")
