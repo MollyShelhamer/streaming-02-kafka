@@ -204,7 +204,7 @@ def select_fields(row: dict[str, Any]) -> dict[str, Any]:
     Returns:
         A dictionary with only the selected fields.
     """
-    fields_to_keep = ["sale_id", "product_id", "sale_amount", "region_id"]
+    fields_to_keep = ["product_id", "region_id"]
     return {k: row[k] for k in fields_to_keep if k in row}
 
 
